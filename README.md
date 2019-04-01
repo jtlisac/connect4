@@ -4,6 +4,7 @@ Connect four for CS201
 
 Note: large input board sizes will result in poor display of board.
 
+Tutorial video link: https://drive.google.com/open?id=1imDWI1IIJe_2kyLbaqe2MYRbwrsAczhB
 
 Instructions:
 
