@@ -1,4 +1,3 @@
-//trying without curses
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
@@ -10,10 +9,7 @@ int gameMode();
 void buildBoard(int boardX,int boardY,int board[boardX][boardY]);
 int playerChoice(int player);
 int findRow(int columnChoice,int boardX,int boardY,int board[boardX][boardY],int mode);
-int vertCheck(int boardX,int boardY,int board[boardX][boardY],int player,int column,int row);
-int horizontalCheck(int boardX,int boardY,int board[boardX][boardY],int player,int column,int row);
-int diagUpCheck(int boardX,int boardY,int board[boardX][boardY],int player,int column,int row);
-int diagDownCheck(int boardX,int boardY,int board[boardX][boardY],int player,int column,int row);
+int boardCheck(int boardX,int boardY,int board[boardX][boardY],int player,int column,int row,int columnInc,int rowInc);
 void stateSearch(int boardX,int boardY,int board[boardX][boardY],int player,int* search);
 int winCheck(int boardX,int boardY,int board[boardX][boardY]);
 int fullCheck(int boardX,int boardY,int board[boardX][boardY]);
@@ -231,207 +227,71 @@ int findRow(int columnChoice,int boardX,int boardY, int board[boardX][boardY],in
 	return -1;
 }
 
+//returns number of sequential blocks of the same player
 //returns number of sequential vertical blocks of the same player
-int vertCheck(int boardX,int boardY,int board[boardX][boardY],int player,int column,int row)
+int boardCheck(int boardX,int boardY,int board[boardX][boardY],int player,int column,int row,int columnInc,int rowInc)
 {
-	int vertMax=1;
-	//no room,invalid chain
-	if (row+3>=boardY)
-		return 0;
-	//1st space matches
-	if (row+1<boardY && board[column][row+1]==player)
+        int max=1;
+	//check if chain can fit, otherwise invalid chain
+	//chain goes right
+	if (columnInc>0)
 	{
-		vertMax++;
-		//2nd space matches
-		if (row+2<boardY && board[column][row+2]==player)
-		{
-			vertMax++;
-			if (row+3<boardY && board[column][row+3]==player)
-			{
-				vertMax++;
-			}
-			//no more spaces or space taken by other player
-			else if	(row+3>=boardY || board[column][row+3]==(player%2+1))
-				return 0;
-			//otherwise empty space exists
-		}
-		//no more spaces or space taken by other player
-		else if (row+2>=boardY || board[column][row+2]==(player%2+1))
+		if (column+3>=boardX)
 			return 0;
-		//otherwise empty space exists
-	}
-	return vertMax;
-}
-
-//returns number of sequential horizontal blocks of the same player, including one open space
-int horizontalCheck(int boardX,int boardY,int board[boardX][boardY],int player,int column,int row)
-{
-	int horizontalMax=1;
-	int openSpace=1;
-	//no room, invalid chain
-	if (column+3>=boardX)
-		return 0;
-	//1st space matches or is open
-	if (board[column+1][row]!=(player%2+1) && (openSpace>0 || board[column+1][row]==player))
-	{
-		//there was an open space, something needs to be on other side
-		if (board[column+1][row]==0 && board[column+2][row]==player)
-			openSpace--;
-		//chain already ended
-		else
-			return horizontalMax;
-		//passed
-		horizontalMax++;
-		//2nd space matches or is open
-		if (board[column+2][row]!=(player%2+1) && (openSpace>0 || board[column+2][row]==player))
+		//diagUp
+		if (rowInc>0)
 		{
-			//if there was an open space, somthing needs to be on other side
-			if (board[column+2][row]==0 && board[column+3][row]==player)
-				openSpace--;
-			//chain ended earlier
-			else
-				return horizontalMax;
-			//passed
-			horizontalMax++;
-			//3rd space matches
-			if (board[column+3][row]==player)
-			{
-				//passed
-				horizontalMax++;
-				//if there is a hole in the chain
-				if (openSpace==0)
-					horizontalMax--;
-			}
-			//invalid chain
-			else if (board[column+3][row]==(player%2+1))
+			if (row+3>=boardY)
 				return 0;
 		}
-		//invalid chain
-		else
-			return 0;
+		//diagDown
+		else if (rowInc<0)
+		{
+			if (row-3<0)
+				return 0;
+		}
 	}
-	//invalid chain
 	else
-		return 0;
+	{
+		//vertical
+		if (row+3>=boardY)
+			return 0;
+	}
 
-	return horizontalMax;
-}
-
-
-//returns number of sequential diagonal up blocks of the same player, including one open space
-int diagUpCheck(int boardX,int boardY,int board[boardX][boardY],int player,int column,int row)
-{
-	int diagUpMax=1;
-	int openSpace=1;
-        //no room, invalid chain
-        if (column+3>=boardX || row+3>=boardY)
-                return 0;
-        //1st space matches or is open
-        if (board[column+1][row+1]!=(player%2+1) && (openSpace>0 || board[column+1][row+1]==player))
+        //1st space matches
+        if (board[column+columnInc][row+rowInc]==player)
         {
-                //there was an open space, something needs to be on other side
-                if (board[column+1][row+1]==0 && board[column+2][row+2]==player)
-                        openSpace--;
-                //chain already ended
-                else
-                        return diagUpMax;
-                //passed
-                diagUpMax++;
-                //2nd space matches or is open
-                if (board[column+2][row+2]!=(player%2+1) && (openSpace>0 || board[column+2][row+2]==player))
+                max++;
+                //2nd space matches
+                if (board[column+2*columnInc][row+2*rowInc]==player)
                 {
-                        //if there was an open space, somthing needs to be on other side
-                        if (board[column+2][row+2]==0 && board[column+3][row+3]==player)
-                                openSpace--;
-                        //chain ended earlier
-                        else
-                                return diagUpMax;
-                        //passed
-                        diagUpMax++;
-                        //3rd space matches
-                        if (board[column+3][row+3]==player)
+                        max++;
+                        if (board[column+3*columnInc][row+3*rowInc]==player)
                         {
-                                //passed
-                                diagUpMax++;
-                                //if there is a hole in the chain
-                                if (openSpace==0)
-                                        diagUpMax--;
+                                max++;
                         }
-                        //invalid chain
-                        else if (board[column+3][row+3]==(player%2+1))
+                        //space taken by other player
+                        else if (board[column+3*columnInc][row+3*rowInc]==(player%2+1))
                                 return 0;
+                        //otherwise empty space exists
                 }
-                //invalid chain
-                else
+                //space taken by other player
+                else if (board[column+2*columnInc][row+2*rowInc]==(player%2+1))
                         return 0;
+                //otherwise empty space exists
         }
-        //invalid chain
-        else
-                return 0;
-
-        return diagUpMax;
+        return max;
 }
 
-//returns number of sequential diagonal down blocks of the smae player, including one open space
-int diagDownCheck(int boardX,int boardY,int board[boardX][boardY],int player,int column,int row)
-{
-	int diagDownMax=1;
-        int openSpace=1;
-        //no room, invalid chain
-        if (column+3>=boardX || row-3<=0)
-                return 0;
-        //1st space matches or is open
-        if (board[column+1][row-1]!=(player%2+1) && (openSpace>0 || board[column+1][row-1]==player))
-        {
-                //there was an open space, something needs to be on other side
-                if (board[column+1][row-1]==0 && board[column+2][row-2]==player)
-                        openSpace--;
-                //chain already ended
-                else
-                        return diagDownMax;
-                //passed
-                diagDownMax++;
-                //2nd space matches or is open
-                if (board[column+2][row-2]!=(player%2+1) && (openSpace>0 || board[column+2][row-2]==player))
-                {
-                        //if there was an open space, somthing needs to be on other side
-                        if (board[column+2][row-2]==0 && board[column+3][row-3]==player)
-                                openSpace--;
-                        //chain ended earlier
-                        else
-                                return diagDownMax;
-                        //passed
-                        diagDownMax++;
-                        //3rd space matches
-                        if (board[column+3][row-3]==player)
-                        {
-                                //passed
-                                diagDownMax++;
-                                //if there is a hole in the chain
-                                if (openSpace==0)
-                                        diagDownMax--;
-                        }
-                        //invalid chain
-                        else if (board[column+3][row-3]==(player%2+1))
-                                return 0;
-                }
-                //invalid chain
-                else
-                        return 0;
-        }
-        //invalid chain
-        else
-                return 0;
 
-        return diagDownMax;
 
-}
 
 //finds available column number for best size chain
 //returns avaiable column number in search[0]
 //returns size in search[1]
 void stateSearch(int boardX,int boardY, int board[boardX][boardY],int player,int* search)
 {
+	
 	search[0]=0;
 	search[1]=0;
 	//beginning of loop, will cycle through board
@@ -448,12 +308,15 @@ void stateSearch(int boardX,int boardY, int board[boardX][boardY],int player,int
 			int diagDown=0;
 			if (board[column][row]==player)
 			{
+
+				//new function
 				//functions to find max of possible available chains
-				//has to have available space to be valid
-				vertical=vertCheck(boardX,boardY,board,player,column,row);
-				horizontal=horizontalCheck(boardX,boardY,board,player,column,row);
-				diagUp=diagUpCheck(boardX,boardY,board,player,column,row);
-				diagDown=diagDownCheck(boardX,boardY,board,player,column,row);
+                                //has to have available space to be valid
+                                vertical=boardCheck(boardX,boardY,board,player,column,row,0,1);
+                                horizontal=boardCheck(boardX,boardY,board,player,column,row,1,0);
+                                diagUp=boardCheck(boardX,boardY,board,player,column,row,1,1);
+                                diagDown=boardCheck(boardX,boardY,board,player,column,row,1,-1);
+
 
 				/*
 				//test code
@@ -469,6 +332,7 @@ void stateSearch(int boardX,int boardY, int board[boardX][boardY],int player,int
 				printf("%d",diagDown);
                                 printf("\n");
 				*/
+				
 
 				
 				//find maximum
@@ -707,6 +571,7 @@ int main()
 	int rematch=0;
 
 	//ask for board dimensions
+	printf("Board sizes too large will wrap around the screen and be hard to read.\n");
 	//ask for y
 	rows=findDimension('y');
 	//ask for x
@@ -736,8 +601,19 @@ int main()
 		//AI makes move
 		if (mode==0 && player==2)
 		{
-			choice=winCheck(columns,rows,board);
-			choiceRow=findRow(choice,columns,rows,board,1);
+			//offset for do while loop
+			choice=winCheck(columns,rows,board)-1;
+			choiceRow=-1;
+			do
+			{
+				//if error occurs, cycle through to find open space
+				choice++;
+				//reset if too large
+				if (choice>=columns)
+					choice=0;
+				choiceRow=findRow(choice,columns,rows,board,0);
+				
+			} while (choiceRow<0);
 		}
 		//2nd player makes move
 		else
@@ -784,8 +660,6 @@ int main()
 			}
 			//display win count
 			winCount(playerOneWins,playerTwoWins);
-			//display board
-			buildBoard(columns,rows,board);
 			//ask for rematch
 			rematch=askForRematch();
 			if (rematch==1)
